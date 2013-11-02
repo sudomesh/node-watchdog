@@ -19,10 +19,10 @@ require("string")
 
 --]]
 
+SLEEP_INTERVAL_SECONDS = 5
+
 COMMAND_SLEEP  = "sleep"
 COMMAND_UPTIME = "uptime"
-
-SLEEP_INTERVAL_SECONDS = 5
 
 SERVICE_NAME_CRON = "cron"
 SERVICE_NAME_SSH  = "sshd"
@@ -64,6 +64,21 @@ function is_process_running(name_str)
   return proc_found
 end
 
+function is_interface_meshing(iface_name)
+  iface_found = false
+  result = get_interface_settings()
+  if result.status == BATCTL_STATUS_SUCCESS then
+    for key, iface in pairs(result.data) do
+      if iface.name == iface_name and iface.status == "active" then
+        iface_found = true
+        break
+      end
+    end
+  end
+  
+  return iface_found
+end
+
 function do_stuff()
   
   while true do
@@ -80,6 +95,12 @@ function do_stuff()
       print("ssh is running :)")
     else
       print("ssh is not running! D:")
+    end
+    
+    if is_interface_meshing("adhoc0") then
+      print("meshing on adhoc0 :)")
+    else
+      print("not meshing on adhoc0! D:")
     end
     
     sleepcmd = io.popen(COMMAND_SLEEP .. " " .. SLEEP_INTERVAL_SECONDS)
