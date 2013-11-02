@@ -24,8 +24,9 @@ SLEEP_INTERVAL_SECONDS = 5
 COMMAND_SLEEP  = "sleep"
 COMMAND_UPTIME = "uptime"
 
-SERVICE_NAME_CRON = "cron"
-SERVICE_NAME_SSH  = "sshd"
+SERVICE_NAME_CRON         = "cron"
+SERVICE_NAME_SSH          = "sshd"
+SERVICE_NAME_TUNNELDIGGER = "tunneldigger"
 
 function get_cpu_load_averages()
   
@@ -34,14 +35,14 @@ function get_cpu_load_averages()
   end
   
   load_cmd = io.popen(COMMAND_UPTIME)
-  load_str = load_cmd:read("*L")
+  load_str = load_cmd:read("*l")
   
   one_m = parse_float(string.match(load_str, '.*load%saverage:%s(%d+.%d+),%s%d+.%d+,%s%d+.%d+'))
   five_m = parse_float(string.match(load_str, '.*load%saverage:%s%d+.%d+,%s(%d+.%d+),%s%d+.%d+'))
   fifteen_m = parse_float(string.match(load_str, '.*load%saverage:%s%d+.%d+,%s%d+.%d+,%s(%d+.%d+)'))
   
   load_cmd:close()
-  return {one_m, five_m, fifteen_m}
+  return {[1] = one_m, [5] = five_m, [15] = fifteen_m}
 end
 
 function is_process_running(name_str)
@@ -83,7 +84,7 @@ function do_stuff()
   
   while true do
     cpu_loads = get_cpu_load_averages()
-    print("five minute load average: " .. cpu_loads[2])
+    print("five minute load average: " .. cpu_loads[5])
   
     if is_process_running(SERVICE_NAME_CRON) then
       print("cron is running :)")
@@ -95,6 +96,12 @@ function do_stuff()
       print("ssh is running :)")
     else
       print("ssh is not running! D:")
+    end
+    
+    if is_process_running(SERVICE_NAME_TUNNELDIGGER) then
+      print("tunneldigger is running :)")
+    else
+      print("tunneldigger is not running! D:")
     end
     
     if is_interface_meshing("adhoc0") then
