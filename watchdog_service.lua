@@ -19,7 +19,13 @@ require("string")
 
 --]]
 
+COMMAND_SLEEP  = "sleep"
+COMMAND_UPTIME = "uptime"
+
 SLEEP_INTERVAL_SECONDS = 5
+
+SERVICE_NAME_CRON = "cron"
+SERVICE_NAME_SSH  = "sshd"
 
 function get_cpu_load_averages()
   
@@ -27,7 +33,7 @@ function get_cpu_load_averages()
     return string.match(str, '(%d+).%d+') + (string.match(str, '%d+.(%d+)') * 0.01)
   end
   
-  load_cmd = io.popen('uptime')
+  load_cmd = io.popen(COMMAND_UPTIME)
   load_str = load_cmd:read("*L")
   
   one_m = parse_float(string.match(load_str, '.*load%saverage:%s(%d+.%d+),%s%d+.%d+,%s%d+.%d+'))
@@ -64,19 +70,19 @@ function do_stuff()
     cpu_loads = get_cpu_load_averages()
     print("five minute load average: " .. cpu_loads[2])
   
-    if is_process_running("cron") then
+    if is_process_running(SERVICE_NAME_CRON) then
       print("cron is running :)")
     else
       print("cron is not running! D:")
     end
     
-    if is_process_running("sshd") then
+    if is_process_running(SERVICE_NAME_SSH) then
       print("ssh is running :)")
     else
       print("ssh is not running! D:")
     end
     
-    sleepcmd = io.popen("sleep " .. SLEEP_INTERVAL_SECONDS)
+    sleepcmd = io.popen(COMMAND_SLEEP .. " " .. SLEEP_INTERVAL_SECONDS)
     sleepcmd:close()
   end
   
