@@ -1,11 +1,48 @@
 #!/usr/bin/env lua
 
 require("batctl")
+require("string")
+
+--[[
+
+  The purpose of the script is to monitor
+  system critical resources and restart services
+  or perform a hardware reset if necessary.
+  
+  Eventually this script should monitor:
+    kernel watchdog
+    abnormal system load
+    cron daemon
+    ssh daemon
+    tunneldigger
+    batman-adv interfaces
+
+--]]
+
+function get_cpu_load_averages()
+  
+  function parse_float(str)
+    return string.match(str, '(%d+).%d+') + (string.match(str, '%d+.(%d+)') * 0.01)
+  end
+  
+  load_cmd = io.popen('uptime')
+  load_str = load_cmd:read("*L")
+  
+  one_m = parse_float(string.match(load_str, '.*load%saverage:%s(%d+.%d+),%s%d+.%d+,%s%d+.%d+'))
+  five_m = parse_float(string.match(load_str, '.*load%saverage:%s%d+.%d+,%s(%d+.%d+),%s%d+.%d+'))
+  fifteen_m = parse_float(string.match(load_str, '.*load%saverage:%s%d+.%d+,%s%d+.%d+,%s(%d+.%d+)'))
+  
+  return {one_m, five_m, fifteen_m}
+end
 
 rootchk = io.popen('id -u')
 if not (rootchk:read("*n") == 0) then
   print("this script must be run as root")
 else
+  
+  
+  cpu_load = get_cpu_load_averages(io.popen('uptime'))
+  print("load average of one minute: " .. cpu_load[1] .. ", five minutes: " .. cpu_load[2] .. ", fifteen minutes: " .. cpu_load[3])
   
   -- get an array of batman-adv managed interfaces
   result = get_interface_settings()
