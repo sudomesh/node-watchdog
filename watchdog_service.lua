@@ -35,6 +35,24 @@ function get_cpu_load_averages()
   return {one_m, five_m, fifteen_m}
 end
 
+function is_process_running(name_str)
+  proc_found = false
+  proc_ls = io.popen('ls -l /proc/ | grep [0-9][0-9]:[0-9][0-9]\\ [0-9]')
+  for proc_str in proc_ls:lines() do
+    proc_id = string.match(proc_str, '.*%d+:%d+%s(%d+)')
+    proc_status = io.popen('2>&1 cat /proc/' .. proc_id .. '/status')
+    proc_name = proc_status:read("*l")
+    if not (proc_name == nil) then
+      if string.match(proc_name, 'Name:%s+(.+)$') == name_str then
+        proc_found = true
+        break
+      end
+    end
+  end
+  
+  return proc_found
+end
+
 rootchk = io.popen('id -u')
 if not (rootchk:read("*n") == 0) then
   print("this script must be run as root")
@@ -43,6 +61,12 @@ else
   
   cpu_load = get_cpu_load_averages(io.popen('uptime'))
   print("load average of one minute: " .. cpu_load[1] .. ", five minutes: " .. cpu_load[2] .. ", fifteen minutes: " .. cpu_load[3])
+  
+  if is_process_running("sshd") then
+    print("ssh is running!")
+  else
+    print("ssh is not running!")
+  end
   
   -- get an array of batman-adv managed interfaces
   result = get_interface_settings()
