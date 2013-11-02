@@ -19,6 +19,8 @@ require("string")
 
 --]]
 
+SLEEP_INTERVAL_SECONDS = 5
+
 function get_cpu_load_averages()
   
   function parse_float(str)
@@ -32,6 +34,7 @@ function get_cpu_load_averages()
   five_m = parse_float(string.match(load_str, '.*load%saverage:%s%d+.%d+,%s(%d+.%d+),%s%d+.%d+'))
   fifteen_m = parse_float(string.match(load_str, '.*load%saverage:%s%d+.%d+,%s%d+.%d+,%s(%d+.%d+)'))
   
+  load_cmd:close()
   return {one_m, five_m, fifteen_m}
 end
 
@@ -48,104 +51,41 @@ function is_process_running(name_str)
         break
       end
     end
+    proc_status:close()
   end
+  proc_ls:close()
   
   return proc_found
 end
 
+function do_stuff()
+  
+  while true do
+    cpu_loads = get_cpu_load_averages()
+    print("five minute load average: " .. cpu_loads[2])
+  
+    if is_process_running("cron") then
+      print("cron is running :)")
+    else
+      print("cron is not running! D:")
+    end
+    
+    if is_process_running("sshd") then
+      print("ssh is running :)")
+    else
+      print("ssh is not running! D:")
+    end
+    
+    sleepcmd = io.popen("sleep " .. SLEEP_INTERVAL_SECONDS)
+    sleepcmd:close()
+  end
+  
+end
+
 rootchk = io.popen('id -u')
 if not (rootchk:read("*n") == 0) then
+  rootchk:close()
   print("this script must be run as root")
 else
-  
-  
-  cpu_load = get_cpu_load_averages(io.popen('uptime'))
-  print("load average of one minute: " .. cpu_load[1] .. ", five minutes: " .. cpu_load[2] .. ", fifteen minutes: " .. cpu_load[3])
-  
-  if is_process_running("sshd") then
-    print("ssh is running!")
-  else
-    print("ssh is not running!")
-  end
-  
-  -- get an array of batman-adv managed interfaces
-  result = get_interface_settings()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("batman-adv currently managing " .. #result.data .. " interfaces.")
-    for key, iface in pairs(result.data) do
-      print(iface.name .. ': ' .. iface.status)
-    end
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get an array of all known batman-adv network originators
-  result = get_originators()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\nthere are " .. #result.data .. " originators known to the network.")
-    for key, orig in pairs(result.data) do
-      print(orig.address .. ' last seen ' .. orig.last_seen_ms .. 'ms ago')
-    end
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get an array of all known batman-adv gateways
-  result = get_gateway_list()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\nthere are " .. #result.data .. " gateways known to the network.")
-    for key, gateway in pairs(result.data) do
-      print(gateway.address .. ' class: ' .. gateway.class)
-    end
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get the originator interval
-  result = get_originator_interval_ms()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\noriginator interval is: " .. result.data)
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get the gateway mode
-  result = get_gateway_mode()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\ngateway mode is: " .. result.data)
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get packet aggregation
-  result = get_packet_aggregation()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\npacket aggregation is: " .. result.data)
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get bonding mode
-  result = get_bonding_mode()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\nbonding mode is: " .. result.data)
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get fragmentation mode
-  result = get_fragmentation_mode()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\nfragmentation mode is: " .. result.data)
-  else
-    print("error! " .. result.data)
-  end
-
-  -- get ap isolation mode
-  result = get_ap_isolation_mode()
-  if result.status == BATCTL_STATUS_SUCCESS then
-    print("\nisolation mode is: " .. result.data)
-  else
-    print("error! " .. result.data)
-  end
+  do_stuff()
 end
